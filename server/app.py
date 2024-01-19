@@ -15,20 +15,45 @@ migrate = Migrate(app, db)
 
 db.init_app(app)
 
+@app.route('/')
+def home():
+    return '<h1> Welcome </h1>'
+
 @app.route('/clear')
 def clear_session():
     session['page_views'] = 0
     return {'message': '200: Successfully cleared session data.'}, 200
 
-@app.route('/articles')
+@app.route('/articles', methods= ["GET"])
 def index_articles():
+    articles =  Article.query.all()
+    heroes_dict = [
+            {
+                'id':article.id,
+                'author': article.author,
+                'title': article.content,
+                'preview': article.preview,
+                'minutes_to_read': article.minutes_to_read,
+                'date': article.date,
+                'user_id': article.user_id
+            }
+            for article in articles
+        ]
 
-    pass
+    return jsonify(heroes_dict)
+   
 
-@app.route('/articles/<int:id>')
+@app.route('/articles/<int:id>', methods=["GET"])
 def show_article(id):
 
-    pass
+    session['page_views'] = session.get('page_views') or 0
+    session['page_views'] += 1
+
+    if session['page_views'] <= 3:
+        article = Article.query.filter_by(id=id).first()
+        return make_response(jsonify(article.to_dict()), 200)
+    
+    return {'message': 'Maximum pageview limit reached'}, 401
 
 if __name__ == '__main__':
-    app.run(port=5555)
+    app.run(port=8000)
